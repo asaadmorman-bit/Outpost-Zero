@@ -1,0 +1,14 @@
+{
+  "name": "Outpost Zero Development",
+  "image": "mcr.microsoft.com/devcontainers/go:1.22-bookworm",
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "golang.Go",
+        "ms-azuretools.vscode-docker",
+        "Zinggi.golang-golangci-lint-config"
+      ]
+    }
+  },
+  "postCreateCommand": "go mod tidy && go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest"
+}

@@ -1,0 +1,86 @@
+{
+  "name": "User",
+  "type": "object",
+  "properties": {
+    "role": {
+      "type": "string",
+      "enum": [
+        "admin",
+        "user",
+        "analyst",
+        "operator"
+      ],
+      "default": "user",
+      "description": "Platform role within Outpost Zero"
+    },
+    "access_level": {
+      "type": "string",
+      "enum": [
+        "free",
+        "paid_user",
+        "admin"
+      ],
+      "default": "free",
+      "description": "Subscription access tier"
+    },
+    "subscription_id": {
+      "type": "string",
+      "description": "Stripe subscription ID"
+    },
+    "stripe_customer_id": {
+      "type": "string",
+      "description": "Stripe customer ID"
+    },
+    "ecosystem_identity": {
+      "type": "object",
+      "description": "Cross-app identity record for the CyberDojo ecosystem (PHD Hub interoperability)",
+      "properties": {
+        "hub_verified": {
+          "type": "boolean",
+          "default": false,
+          "description": "True when user identity is recognized by the PHD Hub"
+        },
+        "connected_apps": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "List of CyberDojo apps this user is recognized in (e.g. ASOSINT, CyberDojoSensai, OutpostZero)"
+        },
+        "hub_role": {
+          "type": "string",
+          "enum": [
+            "researcher",
+            "analyst",
+            "operator",
+            "admin",
+            "guest"
+          ],
+          "description": "Unified role across the dojo ecosystem"
+        },
+        "last_hub_sync": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Timestamp of last PHD Hub identity sync"
+        },
+        "cross_app_read_allowed": {
+          "type": "boolean",
+          "default": true,
+          "description": "Grants read access to identity status from other CyberDojo apps"
+        }
+      }
+    },
+    "clearance_level": {
+      "type": "string",
+      "enum": [
+        "unclassified",
+        "confidential",
+        "secret",
+        "top_secret",
+        "sci"
+      ],
+      "default": "unclassified",
+      "description": "Security clearance level for DISS/adjudication workflows"
+    }
+  }
+}

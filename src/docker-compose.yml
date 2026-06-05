@@ -1,0 +1,60 @@
+version: '3.8'
+
+services:
+  # 1. The Central Hub
+  asosint-hub:
+    build: 
+      context: ./asosint.io
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000" # Exposes on localhost:3000
+    environment:
+      - NODE_ENV=development
+      - NEXT_PUBLIC_IZULU_API_URL=http://localhost:3001
+      - NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN=${MAPBOX_ACCESS_TOKEN}
+    networks:
+      - sentinel-net
+
+  # 2. Tactical EP Node
+  izulu-sentinel:
+    build: 
+      context: ./izulusentinel.com
+      dockerfile: Dockerfile
+    ports:
+      - "3001:3000" # Maps host port 3001 to container port 3000
+    environment:
+      - NODE_ENV=development
+      - EXPO_PUBLIC_MAPBOX_ACCESS_TOKEN=${MAPBOX_ACCESS_TOKEN}
+      - NEXT_PUBLIC_HUB_API_URL=http://localhost:3000
+    networks:
+      - sentinel-net
+
+  # 3. Edge Cyber Node
+  outpost-zero:
+    build: 
+      context: ./outpost-zero.eds-360.com
+      dockerfile: Dockerfile
+    ports:
+      - "3002:3000" # Maps host port 3002 to container port 3000
+    environment:
+      - NODE_ENV=development
+      - NEXT_PUBLIC_HUB_API_URL=http://localhost:3000
+    networks:
+      - sentinel-net
+
+  # 4. GRC Auditor Node
+  ache-compliance:
+    build: 
+      context: ./ache-compliance.eds-360.com
+      dockerfile: Dockerfile
+    ports:
+      - "3003:3000" # Maps host port 3003 to container port 3000
+    environment:
+      - NODE_ENV=development
+      - NEXT_PUBLIC_HUB_API_URL=http://localhost:3000
+    networks:
+      - sentinel-net
+
+networks:
+  sentinel-net:
+    driver: bridge
