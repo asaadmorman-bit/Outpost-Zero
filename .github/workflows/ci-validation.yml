@@ -1,0 +1,38 @@
+name: Outpost Zero Telemetry CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  validate-and-test:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout Code
+      uses: actions/checkout@v4
+
+    - name: Setup Go Environment
+      uses: actions/setup-go@v5
+      with:
+        go-version: '1.22'
+        cache: true
+
+    - name: Install Dependencies
+      run: go mod tidy
+
+    - name: Run Code Linter
+      run: |
+        # Verifies formatting matches standards
+        if [ "$(gofmt -l . | wc -l)" -gt 0 ]; then
+          echo "Formatting errors found. Please run 'gofmt -w .'"
+          gofmt -l .
+          exit 1
+        fi
+
+    - name: Compile Agent Binary
+      run: go build -v ./cmd/agent/...
+
+    - name: Run Telemetry Logic Tests
+      run: go test -v ./...
