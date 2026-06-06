@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useCallback } from "react";
 import { SecurityEvent, Incident, ThreatIntelligence, UserBehavior, Misconfiguration, AIAdvisory } from "@/entities/all";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -30,6 +29,11 @@ import QuickActions from "../components/dashboard/QuickActions";
 import { useAlerts } from '../components/alerts/AlertProvider';
 import MobileDashboardWidget from '../components/mobile/MobileDashboardWidget';
 
+// ============================================================================
+// NEW PIPELINE: Outpost Zero Stream Panel Integration
+// ============================================================================
+import OutpostTelemetryViewer from '../components/telemetry/OutpostTelemetryViewer';
+
 // Helper function to generate attack data
 const generateAttackData = (currentData) => {
   const now = new Date();
@@ -39,14 +43,14 @@ const generateAttackData = (currentData) => {
     timestamp: now.toISOString(),
     event_type: 'data_exfiltration',
     severity: 'critical',
-    source_ip: '142.250.190.78', // A known "hostile" IP for demo
+    source_ip: '142.250.190.78', 
     description: 'Anomalous large data transfer to known malicious IP',
     ml_risk_score: 98,
     status: 'open'
   };
 
   const highEvent = {
-    id: `evt_high_${Date.now() + 1}`, // Ensure unique ID
+    id: `evt_high_${Date.now() + 1}`, 
     event_id: `evt_high_${Date.now() + 1}`,
     timestamp: new Date(now.getTime() - 1000).toISOString(),
     event_type: 'privilege_escalation',
@@ -57,8 +61,7 @@ const generateAttackData = (currentData) => {
     status: 'open'
   };
 
-  // Combine new events with existing, keeping the list from getting too large for performance
-  const newEvents = [criticalEvent, highEvent, ...currentData.securityEvents.slice(0, 48)]; // Keep around 50 events
+  const newEvents = [criticalEvent, highEvent, ...currentData.securityEvents.slice(0, 48)]; 
 
   const newIncident = {
     id: 'incident_live_attack',
@@ -73,6 +76,7 @@ const generateAttackData = (currentData) => {
   };
 
   const newAdvisory = {
+    id: 'adv_live_attack',
     advisory_id: 'adv_live_attack',
     title: 'AI Advisory: Isolate Compromised Server',
     summary: 'AI analysis recommends immediate network isolation of server "DB-SERVER-01" to halt data exfiltration.',
@@ -91,7 +95,6 @@ const generateAttackData = (currentData) => {
       normal_pattern: false
   };
 
-  // Avoid duplicates or overwrite existing critical entries if they are part of the attack
   const existingIncidents = currentData.incidents.filter(i => i.id !== 'incident_live_attack');
   const existingAdvisories = currentData.advisories.filter(a => a.advisory_id !== 'adv_live_attack');
   const existingBehaviors = currentData.userBehavior.filter(u => u.id !== 'behavior_live_attack');
@@ -103,7 +106,6 @@ const generateAttackData = (currentData) => {
     userBehavior: [highRiskUser, ...existingBehaviors]
   };
 };
-
 
 export default function DashboardPage() {
   const [securityEvents, setSecurityEvents] = useState([]);
@@ -139,7 +141,6 @@ export default function DashboardPage() {
     try {
       console.log('Starting dashboard data load...');
 
-      // Add timeout wrapper for each entity call
       const loadWithTimeout = (entityCall, entityName) => {
         return Promise.race([
           entityCall,
@@ -149,7 +150,6 @@ export default function DashboardPage() {
         ]);
       };
 
-      // Try to load each entity with individual error handling
       const results = await Promise.allSettled([
         loadWithTimeout(SecurityEvent.list("-timestamp", 100).catch(() => []), "SecurityEvent"),
         loadWithTimeout(Incident.list("-created_date", 50).catch(() => []), "Incident"),
@@ -159,7 +159,6 @@ export default function DashboardPage() {
         loadWithTimeout(AIAdvisory.list().catch(() => []), "AIAdvisory")
       ]);
 
-      // Process results and collect debug info
       const debugResults = {};
 
       const eventsData = results[0].status === 'fulfilled' ? results[0].value : [];
@@ -186,8 +185,6 @@ export default function DashboardPage() {
       debugResults.AIAdvisory = { status: results[5].status, count: advisoryData.length };
       setAdvisories(advisoryData);
 
-      // Store this as the clean state if demo mode is not active
-      // Preserving original functionality, this depends on isLiveDemo state
       if (!isLiveDemo) {
         setOriginalData({
           securityEvents: eventsData,
@@ -221,7 +218,7 @@ export default function DashboardPage() {
       triggerAlert('error', `Failed to load dashboard: ${error.message}`);
     }
     setIsLoading(false);
-  }, [isLiveDemo, triggerAlert]); // isLiveDemo is a dependency because the setOriginalData conditional depends on it, triggerAlert added as dependency
+  }, [isLiveDemo, triggerAlert]);
 
   useEffect(() => {
     loadDashboardData();
@@ -230,7 +227,6 @@ export default function DashboardPage() {
   useEffect(() => {
     let interval;
     if (isLiveDemo) {
-      // Start simulating data every 2 seconds
       interval = setInterval(() => {
         setSecurityEvents(prevEvents => {
           const newEvent = {
@@ -244,19 +240,17 @@ export default function DashboardPage() {
             ml_risk_score: Math.floor(80 + Math.random() * 20),
             status: 'open'
           };
-          // Prepend new event and keep array size manageable
           return [newEvent, ...prevEvents.slice(0, 49)];
         });
       }, 2000);
     } else if (originalData) {
-      // If demo is turned off, restore original data
       setSecurityEvents(originalData.securityEvents);
       setIncidents(originalData.incidents);
       setThreatIntel(originalData.threatIntel);
       setUserBehavior(originalData.userBehavior);
       setMisconfigurations(originalData.misconfigurations);
       setAdvisories(originalData.advisories);
-      setOriginalData(null); // Clear original data after restoring
+      setOriginalData(null);
     }
 
     return () => clearInterval(interval);
@@ -265,29 +259,25 @@ export default function DashboardPage() {
   const handleToggleDemoMode = (checked) => {
     setIsLiveDemo(checked);
     if (checked) {
-      // Save current state as original data if it's not already saved
-      // This is crucial to revert to the *actual* loaded data, not just an empty array if demo is enabled before load.
       if (!originalData) {
         setOriginalData({ securityEvents, incidents, threatIntel, userBehavior, misconfigurations, advisories });
       }
-      // Immediately inject first attack data
       const attackData = generateAttackData({ securityEvents, incidents, advisories, userBehavior });
-      setSecurityEvents(attackData.securityEvents.slice(0, 50)); // Keep the list from growing too large
+      setSecurityEvents(attackData.securityEvents.slice(0, 50)); 
       setIncidents(attackData.incidents);
       setAdvisories(attackData.advisories);
       setUserBehavior(attackData.userBehavior);
     }
-    // else block is handled by the useEffect for isLiveDemo when it becomes false
   };
 
   const handleQuickActionComplete = (actionType) => {
     console.log('Quick action completed:', actionType);
     triggerAlert('info', `Quick action "${actionType}" completed.`);
-    loadDashboardData(); // Reload dashboard after action
+    loadDashboardData();
   };
 
   const handleAttackSimulation = () => {
-    handleToggleDemoMode(true); // Activating demo mode simulates an attack
+    handleToggleDemoMode(true);
     triggerAlert('warning', 'Live attack simulation initiated!');
   };
 
@@ -295,13 +285,11 @@ export default function DashboardPage() {
   const highEvents = securityEvents.filter(e => e.severity === 'high').length;
   const openIncidents = incidents.filter(i => ['open', 'investigating'].includes(i.status)).length;
   const criticalAdvisories = advisories.filter(a => a.severity === 'critical').length;
-  const avgRiskScore = userBehavior.length > 0 ?
-    userBehavior.reduce((sum, b) => sum + (b.anomaly_score || 0), 0) / userBehavior.length : 0;
 
   const threatLevelColor = isLiveDemo ? 'critical' :
-                         criticalEvents > 0 || criticalAdvisories > 0 ? 'critical' :
-                         highEvents > 3 ? 'high' :
-                         highEvents > 0 ? 'medium' : 'low';
+                           criticalEvents > 0 || criticalAdvisories > 0 ? 'critical' :
+                           highEvents > 3 ? 'high' :
+                           highEvents > 0 ? 'medium' : 'low';
 
   const criticalIncidents = incidents.filter(i => i.severity === 'critical').length;
   const highSeverityEvents = securityEvents.filter(e => e.severity === 'high' || e.severity === 'critical').length;
@@ -389,18 +377,6 @@ export default function DashboardPage() {
               </Button>
             </CardContent>
           </Card>
-
-          {/* Show minimal dashboard even with errors */}
-          <div className="grid gap-6 md:grid-cols-3">
-            <Card className="border-gray-700 bg-gray-800/50">
-              <CardHeader>
-                <CardTitle className="text-white">Fallback Mode</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-gray-300">Dashboard is running in fallback mode due to data loading issues.</p>
-              </CardContent>
-            </Card>
-          </div>
         </div>
       </div>
     );
@@ -440,13 +416,10 @@ export default function DashboardPage() {
           </Alert>
         )}
 
-        {/* NEW: Quick Actions Panel */}
         <div className="mb-8">
-          {/* QuickActions now also takes onRunSimulation */}
           <QuickActions onActionComplete={handleQuickActionComplete} onRunSimulation={handleAttackSimulation} />
         </div>
 
-        {/* Mobile-Optimized Stats Grid */}
         {isMobile ? (
             <div className="grid grid-cols-2 gap-3 mb-6">
                 <MobileDashboardWidget
@@ -487,24 +460,24 @@ export default function DashboardPage() {
             </div>
         ) : (
           <>
-            <StrategicCommandSummary
-              // All props removed as per outline
-            />
+            <StrategicCommandSummary />
             <SecurityMetrics
                 incidents={incidents}
                 securityEvents={securityEvents}
                 misconfigurations={misconfigurations}
                 threatIntel={threatIntel}
             />
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                <ThreatLevel /> {/* Level prop removed as per outline */}
-                <QuickActions onRunSimulation={handleAttackSimulation} /> {/* Only onRunSimulation kept as per outline */}
-            </div>
           </>
         )}
 
+        {/* ============================================================================
+            DEPLOYED: Outpost Zero Active Processing Table View
+           ============================================================================ */}
+        <div className="mb-8">
+            <OutpostTelemetryViewer />
+        </div>
 
-        {(criticalEvents > 0 || criticalAdvisories > 0) && !isLiveDemo && ( // Only show if not in live demo
+        {(criticalEvents > 0 || criticalAdvisories > 0) && !isLiveDemo && (
           <Alert className="mb-6 border-red-500/50 bg-red-900/20">
             <AlertTriangle className="h-4 w-4 text-red-400" />
             <AlertDescription className="text-red-200">

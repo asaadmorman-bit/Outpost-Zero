@@ -152,13 +152,16 @@ func (ts *TelemetryStreamer) StreamBatch(ctx context.Context, events []ProcessEv
 func main() {
 	hostName, _ := os.Hostname()
 	if hostName == "" {
-		hostName = "OUTPOST-AGENT-CODESPACE"
+		hostName = "OUTPOST-AGENT-LIVE"
 	}
 
 	log.Printf("[INIT] Outpost Zero telemetry harvester bound to host: %s", hostName)
-	streamer := NewTelemetryStreamer("http://localhost:8080", hostName)
+	
+	// Point the streamer directly to your production app instance
+	streamer := NewTelemetryStreamer("https://outpost-zero.eds-360.com", hostName)
 
 	ticker := time.NewTicker(3 * time.Second)
+	// ... remainder of your live execution runtime loop
 	defer ticker.Stop()
 
 	ctx, cancel := context.WithCancel(context.Background())
