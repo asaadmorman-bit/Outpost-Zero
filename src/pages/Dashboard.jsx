@@ -28,7 +28,18 @@ import DemoModeToggle from "../components/dashboard/DemoModeToggle";
 import QuickActions from "../components/dashboard/QuickActions";
 import { useAlerts } from '../components/alerts/AlertProvider';
 import MobileDashboardWidget from '../components/mobile/MobileDashboardWidget';
+import GithubSyncManager from '../components/telemetry/GithubSyncManager';
+return (
+  <div className="min-h-screen p-4 md:p-8" style={{background: 'var(--primary-bg)'}}>
+    <div className="max-w-7xl mx-auto">
 
+      {/* CUSTOM REPOSITORY INTEGRATION STATUS BAR */}
+      <div className="mb-6">
+        <GithubSyncManager />
+      </div>
+
+      <div className="flex flex-col items-start justify-between gap-4 md:flex-row md:items-center mb-8">
+        {/* ... rest of your dashboard code ... */}
 // ============================================================================
 // NEW PIPELINE: Outpost Zero Stream Panel Integration
 // ============================================================================
